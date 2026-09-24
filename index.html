@@ -49,23 +49,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--duck);outline-o
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* pack */
-.pack{position:relative;width:220px;height:360px;cursor:pointer;border:0;padding:0;background:none;transition:transform .2s}
+.pack{position:relative;width:200px;height:402px;cursor:pointer;border:0;padding:0;background:none;transition:transform .2s}
 .pack:hover{transform:translateY(-4px) rotate(-1deg)}
 .pack.charge{animation:charge .7s ease-in}
 @keyframes charge{0%,100%{transform:none}15%{transform:rotate(-2deg)}30%{transform:rotate(2deg)}45%{transform:rotate(-3deg) scale(1.02)}60%{transform:rotate(3deg) scale(1.03)}80%{transform:rotate(-4deg) scale(1.04)}}
-.pack .body,.pack .lid{position:absolute;left:0;right:0;border-radius:10px;overflow:hidden;
-  background:linear-gradient(115deg,#fff2b8 0%,#ffd23f 22%,#fff6dc 38%,#e6b84a 55%,#ffe98a 72%,#d9a730 100%);
-  box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 0 0 3px rgba(11,16,48,.9)}
-.pack .lid{top:0;height:44px;border-radius:10px 10px 2px 2px;transition:transform .55s cubic-bezier(.3,1.4,.6,1),opacity .55s;z-index:2;
-  background-image:repeating-linear-gradient(90deg,rgba(11,16,48,.9) 0 6px,transparent 6px 12px),linear-gradient(115deg,#fff2b8,#ffd23f,#e6b84a);background-size:100% 8px,100% 100%;background-repeat:no-repeat;background-position:0 100%,0 0}
-.pack .body{top:40px;bottom:0;border-radius:2px 2px 10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink)}
+.pack .body,.pack .lid{position:absolute;left:0;right:0;overflow:hidden;background:url(img/pack.jpg) no-repeat;background-size:200px 402px;filter:drop-shadow(0 20px 30px rgba(0,0,0,.55))}
+.pack .lid{top:0;height:36px;background-position:0 0;border-radius:4px 4px 0 0;transition:transform .55s cubic-bezier(.3,1.4,.6,1),opacity .55s;z-index:2}
+.pack .body{top:36px;bottom:0;background-position:0 -36px;border-radius:0 0 4px 4px}
 .pack.torn .lid{transform:translate(90px,-120px) rotate(28deg);opacity:0}
-.pack .shine{position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.65) 45%,transparent 60%);background-size:250% 100%;animation:shine 3.2s ease-in-out infinite}
+.pack .shine{position:absolute;inset:0;mix-blend-mode:soft-light;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.8) 45%,transparent 60%);background-size:250% 100%;animation:shine 3.2s ease-in-out infinite}
 @keyframes shine{0%{background-position:150% 0}60%,100%{background-position:-60% 0}}
-.pack .big30{font-family:var(--disp);font-size:92px;line-height:.85;color:var(--ink);text-shadow:4px 4px 0 var(--blue)}
-.pack .lbl{font-family:var(--disp);font-size:15px;letter-spacing:1px}
-.pack .duck{width:64px;height:64px;border-radius:50%;border:3px solid var(--ink)}
-.pack .tiny{font:700 10px var(--mono);letter-spacing:1.5px;opacity:.8}
 .hint{margin-top:18px;font:700 12px var(--mono);letter-spacing:2px;color:var(--duck);text-transform:uppercase;animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.4}}
 
@@ -347,13 +340,7 @@ function showSealed(){
   inner.innerHTML = `
     <button class="pack" id="pack" aria-label="Tear open the pack">
       <div class="lid"></div>
-      <div class="body"><div class="shine"></div>
-        <div class="tiny">POKÉMON TCG</div>
-        <div class="big30">30</div>
-        <div class="lbl">CELEBRATION</div>
-        <img class="duck" src="img/duck.png" alt="">
-        <div class="tiny">5 CARDS · ALL HOLO</div>
-      </div>
+      <div class="body"><div class="shine"></div></div>
     </button>
     <div class="hint">Tap the pack to tear it</div>`;
   $("pack").onclick = tear;
