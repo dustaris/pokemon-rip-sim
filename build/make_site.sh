@@ -12,5 +12,5 @@ rm -rf docs && mkdir -p docs/img
   printf '\n</body>\n</html>\n'
 } > docs/index.html
 cp data.js docs/
-cp -R img/c img/duck.png docs/img/
+cp -R img/c img/*.png img/*.jpg docs/img/
 touch docs/.nojekyll
