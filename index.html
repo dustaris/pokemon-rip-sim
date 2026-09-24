@@ -193,9 +193,7 @@ footer{margin-top:26px;font-size:12px;color:var(--mute);max-width:760px}
       <div class="controls">
         <button class="btn" id="btnNext">Rip a pack</button>
         <button class="btn ghost" id="btnAll">Reveal all</button>
-        <button class="btn ghost" id="btn10">Rip 10 fast</button>
         <button class="btn ghost" id="btnEtb">Rip an ETB (9 packs)</button>
-        <button class="btn ghost" id="btnPc">Rip a Pokémon Center ETB (11)</button>
       </div>
     </div>
 
@@ -476,9 +474,7 @@ $("tab-binder").onclick = () => setTab("binder");
 
 $("btnNext").onclick = next;
 $("btnAll").onclick = revealAll;
-$("btn10").onclick = () => bulk(10);
 $("btnEtb").onclick = () => bulk(9, PRICES.etb || 9*price, "Elite Trainer Box");
-$("btnPc").onclick = () => bulk(11, PRICES.pcetb || 11*price, "Pokémon Center ETB");
 $("price").oninput = e => { price = parseFloat(e.target.value) || 0; try { localStorage.setItem("rip30pack", price); } catch {} renderStats(); };
 let armed = false;
 $("btnReset").onclick = e => {
@@ -487,7 +483,7 @@ $("btnReset").onclick = e => {
 };
 document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && !$("view-rip").hidden){ e.preventDefault(); next(); } });
 
-$("priceNote").textContent = `Card values: TCGplayer market price as of ${PRICES.asOf || "—"}. Loose pack ${money(PRICES.pack)} · ETB ${money(PRICES.etb)} · Pokémon Center ETB ${money(PRICES.pcetb)} (ETB rips are charged the box price; promo cards not included).`;
+$("priceNote").textContent = `Card values: TCGplayer market price as of ${PRICES.asOf || "—"}. Loose pack ${money(PRICES.pack)} · ETB ${money(PRICES.etb)} (ETB rips are charged the box price; the promo card isn't included).`;
 renderStats();
 showSealed();
 })();
