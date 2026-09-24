@@ -203,7 +203,8 @@ footer{margin-top:26px;font-size:12px;color:var(--mute);max-width:760px}
         <button class="btn" id="btnNext">Rip a pack</button>
         <button class="btn ghost" id="btnAll">Reveal all</button>
         <button class="btn ghost" id="btn10">Rip 10 fast</button>
-        <button class="btn ghost" id="btn36">Rip a booster box (36)</button>
+        <button class="btn ghost" id="btnEtb">Rip an ETB (9 packs)</button>
+        <button class="btn ghost" id="btnPc">Rip a Pokémon Center ETB (11)</button>
       </div>
     </div>
 
@@ -227,7 +228,7 @@ footer{margin-top:26px;font-size:12px;color:var(--mute);max-width:760px}
           <thead><tr><th>Rarity</th><th>Odds</th><th>Yours</th><th>Pulled</th></tr></thead>
           <tbody id="oddsBody"></tbody>
         </table>
-        <p class="note">Odds per pack from community open data (<a href="https://www.wargamer.com/pokemon-trading-card-game/30th-celebration-pull-rates" target="_blank" rel="noopener">4,063 packs</a>, <a href="https://tcgtalk.com/guides/30th-anniversary-pull-rates" target="_blank" rel="noopener">652 packs</a>). RGB Mew rate is an estimate from very few pulls.</p>
+        <p class="note">Odds per pack from community open data (<a href="https://www.wargamer.com/pokemon-trading-card-game/30th-celebration-pull-rates" target="_blank" rel="noopener">4,063 packs</a>, <a href="https://tcgtalk.com/guides/30th-anniversary-pull-rates" target="_blank" rel="noopener">652 packs</a>). Max one hit per pack. RGB Mew rate is an estimate from very few pulls.</p>
       </div>
       <div class="panel">
         <h2>HITS</h2>
@@ -272,26 +273,33 @@ const num = c => c.r==="CC" ? c.o : c.r==="RGB" ? c.n+"/RGB" : "#"+c.n+(+c.n>128
 const byR = {}; cards.forEach(c => (byR[c.r] ||= []).push(c));
 const pick = r => byR[r][Math.floor(Math.random()*byR[r].length)];
 
-// Pack structure (English, 5 cards): 2 commons, a common/IR/Classic slot, a rare slot, a Pikachu slot.
+// Pack structure (English, 5 cards): 2 commons, a common slot, a rare slot, a Pikachu.
+// At most ONE hit per pack: an IR or Classic replaces the third common; an ex, SIR, FUR or RGB replaces the rare.
+function rollHit(){
+  const x = Math.random(); let t = 0;
+  for (const r of ["RGB","FUR","SIR","CC","IR","DR"]) { t += R[r].odds; if (x < t) return r; }
+  return null;
+}
 function makePack(){
   const c1 = pick("C"); let c2; do c2 = pick("C"); while (c2 === c1);
-  let x = Math.random(), s3 = x < .10 ? pick("CC") : x < .30 ? pick("IR") : pick("C");
-  x = Math.random();
-  const s4 = x < 1/3200 ? pick("RGB") : x < .01 ? pick("FUR") : x < .06 ? pick("SIR") : x < .31 ? pick("DR") : pick("R");
+  let c3; do c3 = pick("C"); while (c3 === c1 || c3 === c2);
+  const hit = rollHit();
+  const s3 = hit === "IR" || hit === "CC" ? pick(hit) : c3;
+  const s4 = hit && hit !== "IR" && hit !== "CC" ? pick(hit) : pick("R");
   return [c1, c2, pick("PK"), s3, s4];   // reveal order: best slots last
 }
 
 // ---------- state ----------
-const blank = () => ({packs:0, counts:{}, have:{}, hits:[]});
+const blank = () => ({v:2, packs:0, spent:0, counts:{}, have:{}, hits:[]});
 let S = blank();
-try { S = Object.assign(blank(), JSON.parse(localStorage.getItem("rip30") || "null") || {}); } catch {}
+try { const saved = JSON.parse(localStorage.getItem("rip30") || "null"); if (saved && saved.v === 2) S = Object.assign(blank(), saved); } catch {}   // v1 stats (two-hit packs) are dropped
 const save = () => { try { localStorage.setItem("rip30", JSON.stringify(S)); } catch {} };
 let price = PRICES.pack || 17.61;
 try { const p = parseFloat(localStorage.getItem("rip30pack")); if (!isNaN(p)) price = p; } catch {}
 $("price").value = price.toFixed(2);
 
-function record(pack){
-  S.packs++;
+function record(pack, cost){
+  S.packs++; S.spent += cost;
   const seen = new Set();
   pack.forEach(c => {
     S.have[c.key] = (S.have[c.key]||0) + 1;
@@ -316,11 +324,11 @@ function miniHTML(c){
 
 function renderStats(){
   $("kPacks").textContent = S.packs;
-  $("kSpent").textContent = "$" + Math.round(S.packs * price).toLocaleString();
+  $("kSpent").textContent = "$" + Math.round(S.spent).toLocaleString();
   const dex = Object.keys(S.have).length;
   let value = 0, best = null;
   for (const [k,q] of Object.entries(S.have)){ const c = find(k); if (!c) continue; value += val(c)*q; if (!best || val(c) > val(best)) best = c; }
-  const net = value - S.packs*price;
+  const net = value - S.spent;
   $("kValue").textContent = money(value);
   $("kNet").textContent = (net < 0 ? "−" : "+") + money(Math.abs(net));
   $("kNet").className = S.packs ? (net >= 0 ? "pos" : "neg") : "";
@@ -370,7 +378,7 @@ function tear(){
   p.classList.add("charge");
   setTimeout(() => { p.classList.add("torn"); }, 650);
   setTimeout(() => {
-    record(pack); renderStats();
+    record(pack, price); renderStats();
     mode = "open"; busy = false;
     inner.innerHTML = `<button class="stack" id="stack" aria-label="Flip the next card">${
       pack.map((c,i) => `<div class="card" id="card${i}" style="z-index:${10-i}"><div class="back"></div><div class="face">${artHTML(c,true)}</div></div>`).join("")
@@ -438,17 +446,18 @@ function revealAll(){
   if (top) celebrate(pack.find(c => (R[c.r].hit||0) === top));
 }
 
-function bulk(n){
+function bulk(n, cost, label){
+  cost ??= n*price; label ??= `${n} packs`;
   if (busy) return;
   if (mode === "sealed") { /* discard the unopened preview pack */ }
   const hits = []; let total = 0;
-  for (let i = 0; i < n; i++){ const p = makePack(); record(p); p.forEach(c => { total += val(c); R[c.r].hit && hits.push(c); }); }
+  for (let i = 0; i < n; i++){ const p = makePack(); record(p, cost/n); p.forEach(c => { total += val(c); R[c.r].hit && hits.push(c); }); }
   hits.sort((a,b) => R[b.r].hit - R[a.r].hit || ORDER.indexOf(b.r) - ORDER.indexOf(a.r));
   mode = "done"; renderStats();
   $("pulled").innerHTML = "";
   const tally = ORDER.filter(r => r!=="PK").map(r => [r, hits.filter(c => c.r===r).length]).filter(x => x[1]);
   inner.innerHTML = `<div class="bulk">${hits.length ? hits.map(miniHTML).join("") : ""}</div>
-    <div class="bulk-sum"><b>${n} packs</b> · paid <b>${money(n*price)}</b> · pulled <b style="color:${total>=n*price?"var(--up)":"var(--down)"}">${money(total)}</b><br>${hits.length ? tally.map(([r,k]) => `<span style="color:${R[r].color}">${k} ${R[r].short}</span>`).join(" · ") : "no hits beyond the Pikachu. Ouch."}</div>`;
+    <div class="bulk-sum"><b>${label}</b> · paid <b>${money(cost)}</b> · pulled <b style="color:${total>=cost?"var(--up)":"var(--down)"}">${money(total)}</b><br>${hits.length ? tally.map(([r,k]) => `<span style="color:${R[r].color}">${k} ${R[r].short}</span>`).join(" · ") : "no hits beyond the Pikachu. Ouch."}</div>`;
   if (hits.length) celebrate(hits[0]);
   $("btnNext").textContent = "Rip another";
   $("btnAll").disabled = true;
@@ -477,7 +486,8 @@ $("tab-binder").onclick = () => setTab("binder");
 $("btnNext").onclick = next;
 $("btnAll").onclick = revealAll;
 $("btn10").onclick = () => bulk(10);
-$("btn36").onclick = () => bulk(36);
+$("btnEtb").onclick = () => bulk(9, PRICES.etb || 9*price, "Elite Trainer Box");
+$("btnPc").onclick = () => bulk(11, PRICES.pcetb || 11*price, "Pokémon Center ETB");
 $("price").oninput = e => { price = parseFloat(e.target.value) || 0; try { localStorage.setItem("rip30pack", price); } catch {} renderStats(); };
 let armed = false;
 $("btnReset").onclick = e => {
@@ -486,7 +496,7 @@ $("btnReset").onclick = e => {
 };
 document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && !$("view-rip").hidden){ e.preventDefault(); next(); } });
 
-$("priceNote").textContent = `Card values: TCGplayer market price as of ${PRICES.asOf || "—"}. Loose pack market: ${money(PRICES.pack)}.`;
+$("priceNote").textContent = `Card values: TCGplayer market price as of ${PRICES.asOf || "—"}. Loose pack ${money(PRICES.pack)} · ETB ${money(PRICES.etb)} · Pokémon Center ETB ${money(PRICES.pcetb)} (ETB rips are charged the box price; promo cards not included).`;
 renderStats();
 showSealed();
 })();

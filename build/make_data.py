@@ -44,9 +44,10 @@ for p in load(MAIN):
     if p['num'] and p['num'].endswith('/RGB'):
         c = p['num'][0]; img = f'img/c/rgb{c}.jpg'; dl(p['id'], '../' + img)
         cards.append({'n': c, 'name': p['name'].split(' - ')[0] + f' ({ {"R":"Red","G":"Green","B":"Blue"}[c] })', 'r': 'RGB', 'img': img, 'p': p['price'], 'u': p['url']})
-pack = next((p['price'] for p in load(MAIN) if p['name'] == '30th Celebration Booster Pack'), None)
+sealed = {p['name']: p['price'] for p in load(MAIN)}
+pack, etb, pcetb = (sealed.get('30th Celebration ' + n) for n in ('Booster Pack', 'Elite Trainer Box', 'Pokemon Center Elite Trainer Box'))
 asof = datetime.date.fromtimestamp(os.path.getmtime(f'price_{MAIN}.json')).isoformat()
 open('../data.js', 'w').write('window.CARDS=' + json.dumps(cards, separators=(',', ':')) +
-    f';\nwindow.PRICES={{asOf:"{asof}",pack:{json.dumps(pack)}}};\n')
+    f';\nwindow.PRICES={{asOf:"{asof}",pack:{json.dumps(pack)},etb:{json.dumps(etb)},pcetb:{json.dumps(pcetb)}}};\n')
 missing = [c['name'] for c in cards if c['p'] is None]
-print(len(cards), 'cards; pack', pack, 'as of', asof, '; no price:', missing)
+print(len(cards), 'cards; pack', pack, 'etb', etb, 'pc etb', pcetb, 'as of', asof, '; no price:', missing)
