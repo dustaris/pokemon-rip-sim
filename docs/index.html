@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Rip virtual Pokémon TCG 30th Celebration packs at real pull rates and see the TCGplayer market value of your pulls. An unofficial fan project by WD Card Shop.">
+<link rel="icon" href="img/duck.png">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>30th Celebration Rip Sim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --ink:#0B1030; --ink2:#141B45; --ink3:#1E2760; --line:#2C3677;
+  --cream:#FFF6DC; --mute:#A9B0D6; --duck:#FFD23F; --blue:#2F6BFF; --beak:#FF8A3D;
+  --c:#9AA3C7; --r:#7FB2FF; --dr:#5EE0C0; --pk:#FFD23F; --ir:#FF8A3D; --cc:#E6B84A; --sir:#FF5FA2; --fur:#B48CFF; --rgb:#FF4D6D; --up:#5EE0C0; --down:#FF6B8A;
+  --disp:"Bungee","Impact",system-ui,sans-serif;
+  --body:"Bricolage Grotesque",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--ink);color:var(--cream)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:0 48px;
+  background:radial-gradient(1200px 600px at 50% -10%,#24307a 0%,transparent 60%),var(--ink);min-height:100%}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:center;gap:14px;padding-block:18px 8px;flex-wrap:wrap}
+header img{width:46px;height:46px;border-radius:12px;border:2px solid var(--duck)}
+header h1{font-family:var(--disp);font-weight:400;font-size:clamp(20px,3.4vw,30px);margin:0;letter-spacing:.5px;line-height:1.05}
+header h1 span{color:var(--duck)}
+header p{margin:2px 0 0;color:var(--mute);font-size:13px}
+.hdr-txt{flex:1;min-width:220px}
+.tabs{display:flex;gap:6px;background:var(--ink2);padding:4px;border-radius:999px;border:1px solid var(--line)}
+.tabs button{font:600 13px var(--body);color:var(--mute);background:none;border:0;padding:8px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--duck);color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--duck);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;margin-top:14px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+/* ---------- stage ---------- */
+.stage{position:relative;min-height:560px;border-radius:22px;background:
+  radial-gradient(520px 360px at 50% 55%,rgba(47,107,255,.28),transparent 70%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 14px,transparent 14px 28px),var(--ink2);
+  border:1px solid var(--line);overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px 20px}
+.stage.shake{animation:shake .5s}
+@keyframes shake{20%{transform:translate(-6px,3px)}40%{transform:translate(6px,-4px)}60%{transform:translate(-4px,-2px)}80%{transform:translate(3px,4px)}}
+.flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle,var(--fc,#fff) 0%,transparent 70%)}
+.flash.go{animation:flash .9s ease-out}
+@keyframes flash{0%{opacity:.95}100%{opacity:0}}
+.rays{position:absolute;left:50%;top:44%;width:900px;height:900px;margin:-450px 0 0 -450px;pointer-events:none;opacity:0;transition:opacity .4s;
+  background:repeating-conic-gradient(from 0deg,var(--rc,#fff) 0 6deg,transparent 6deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 62%);mask:radial-gradient(circle,#000 0,transparent 62%);animation:spin 18s linear infinite}
+.rays.on{opacity:.22}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* pack */
+.pack{position:relative;width:220px;height:360px;cursor:pointer;border:0;padding:0;background:none;transition:transform .2s}
+.pack:hover{transform:translateY(-4px) rotate(-1deg)}
+.pack.charge{animation:charge .7s ease-in}
+@keyframes charge{0%,100%{transform:none}15%{transform:rotate(-2deg)}30%{transform:rotate(2deg)}45%{transform:rotate(-3deg) scale(1.02)}60%{transform:rotate(3deg) scale(1.03)}80%{transform:rotate(-4deg) scale(1.04)}}
+.pack .body,.pack .lid{position:absolute;left:0;right:0;border-radius:10px;overflow:hidden;
+  background:linear-gradient(115deg,#fff2b8 0%,#ffd23f 22%,#fff6dc 38%,#e6b84a 55%,#ffe98a 72%,#d9a730 100%);
+  box-shadow:0 20px 50px rgba(0,0,0,.5),inset 0 0 0 3px rgba(11,16,48,.9)}
+.pack .lid{top:0;height:44px;border-radius:10px 10px 2px 2px;transition:transform .55s cubic-bezier(.3,1.4,.6,1),opacity .55s;z-index:2;
+  background-image:repeating-linear-gradient(90deg,rgba(11,16,48,.9) 0 6px,transparent 6px 12px),linear-gradient(115deg,#fff2b8,#ffd23f,#e6b84a);background-size:100% 8px,100% 100%;background-repeat:no-repeat;background-position:0 100%,0 0}
+.pack .body{top:40px;bottom:0;border-radius:2px 2px 10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink)}
+.pack.torn .lid{transform:translate(90px,-120px) rotate(28deg);opacity:0}
+.pack .shine{position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.65) 45%,transparent 60%);background-size:250% 100%;animation:shine 3.2s ease-in-out infinite}
+@keyframes shine{0%{background-position:150% 0}60%,100%{background-position:-60% 0}}
+.pack .big30{font-family:var(--disp);font-size:92px;line-height:.85;color:var(--ink);text-shadow:4px 4px 0 var(--blue)}
+.pack .lbl{font-family:var(--disp);font-size:15px;letter-spacing:1px}
+.pack .duck{width:64px;height:64px;border-radius:50%;border:3px solid var(--ink)}
+.pack .tiny{font:700 10px var(--mono);letter-spacing:1.5px;opacity:.8}
+.hint{margin-top:18px;font:700 12px var(--mono);letter-spacing:2px;color:var(--duck);text-transform:uppercase;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.4}}
+
+/* card stack */
+.stack{position:relative;width:min(300px,78vw);aspect-ratio:63/88;cursor:pointer;border:0;padding:0;background:none}
+.card{position:absolute;inset:0;border-radius:4.5%/3.2%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.2,.9,.3,1.1),opacity .4s}
+.card .face,.card .back{position:absolute;inset:0;border-radius:inherit;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.card .back{background:
+  radial-gradient(circle at 50% 50%,var(--duck) 0 17%,var(--ink) 17% 20%,transparent 20%),
+  linear-gradient(var(--blue) 0 48%,var(--ink) 48% 52%,var(--cream) 52%);border:10px solid #16205a;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.card .face{transform:rotateY(180deg);background:#222;box-shadow:0 14px 40px rgba(0,0,0,.55),0 0 0 2px rgba(255,255,255,.08)}
+.card.up{transform:rotateY(180deg)}
+.card .face img{width:100%;height:100%;object-fit:cover;display:block}
+.card.gone{transform:rotateY(180deg) translate(-130%,10%) rotate(-12deg);opacity:0}
+.card.hit .face{box-shadow:0 0 0 3px var(--hc),0 0 40px 8px var(--hc)}
+.card.holo .face::after{content:"";position:absolute;inset:0;mix-blend-mode:color-dodge;opacity:.35;pointer-events:none;
+  background:linear-gradient(115deg,transparent 20%,#ff5fa2 35%,#5ee0c0 50%,#7fb2ff 62%,transparent 78%);background-size:260% 260%;animation:holo 3s linear infinite}
+@keyframes holo{0%{background-position:0% 0%}100%{background-position:100% 100%}}
+
+/* classic collection placeholder card */
+.cc-card{width:100%;height:100%;padding:7%;background:linear-gradient(135deg,#f7d774,#b8862a 45%,#fff0b0 60%,#c9982f);display:flex}
+.cc-in{flex:1;border-radius:3%;background:linear-gradient(170deg,#1d2a6e,#0b1030);color:var(--cream);display:flex;flex-direction:column;justify-content:space-between;padding:10% 8%;text-align:center}
+.cc-in .t{font:700 clamp(8px,1.1vw,11px) var(--mono);letter-spacing:2px;color:#f7d774}
+.cc-in .n{font-family:var(--disp);font-size:clamp(14px,2.4vw,24px);line-height:1.05;text-wrap:balance}
+.cc-in .s{font:500 clamp(8px,1vw,11px) var(--mono);color:var(--mute)}
+.thumb .cc-in{padding:12% 6%}.thumb .cc-in .n{font-size:13px}.thumb .cc-in .t,.thumb .cc-in .s{font-size:7px;letter-spacing:.5px}
+
+.banner{position:absolute;top:16px;left:50%;transform:translateX(-50%) scale(.4);opacity:0;font-family:var(--disp);font-size:clamp(22px,5vw,40px);white-space:nowrap;
+  color:var(--bc,#fff);text-shadow:3px 3px 0 var(--ink),0 0 24px var(--bc,#fff);pointer-events:none;z-index:5}
+.banner.go{animation:slam 1.6s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes slam{0%{opacity:0;transform:translateX(-50%) scale(2.6)}18%{opacity:1;transform:translateX(-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+
+.meta{margin-top:14px;min-height:44px;text-align:center}
+.meta .nm{font-weight:800;font-size:18px}
+.meta .rt{font:700 11px var(--mono);letter-spacing:1.5px;text-transform:uppercase}
+.counter{font:700 12px var(--mono);color:var(--mute);margin-top:4px}
+
+.pulled{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;min-height:94px}
+.mini{width:62px;aspect-ratio:63/88;border-radius:4px;overflow:hidden;background:var(--ink3);border:2px solid var(--line);position:relative}
+.mini img{width:100%;height:100%;object-fit:cover;display:block}
+.mini.hit{border-color:var(--hc)}
+.tag{position:absolute;left:0;right:0;bottom:0;font:700 9px var(--mono);text-align:center;padding:2px 0;background:rgba(11,16,48,.88);color:var(--cream)}
+.tag.big{color:var(--duck)}
+.meta .px{font:700 16px var(--mono);color:var(--duck);margin-top:2px}
+.meta .px a{color:inherit;text-decoration:none;border-bottom:1px dashed currentColor}
+.mini .cc-card{padding:4px}.mini .cc-in{padding:4px 2px}.mini .cc-in .n{font-size:8px}.mini .cc-in .t,.mini .cc-in .s{display:none}
+
+.controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.btn{font:800 15px var(--body);border-radius:12px;padding:12px 20px;cursor:pointer;border:2px solid var(--ink);background:var(--duck);color:var(--ink);box-shadow:0 4px 0 var(--beak)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--beak)}
+.btn.ghost{background:transparent;color:var(--cream);border-color:var(--line);box-shadow:none}
+.btn:disabled{opacity:.4;cursor:default}
+
+/* side panel */
+aside{display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--ink2);border:1px solid var(--line);border-radius:16px;padding:16px}
+.panel h2{font-family:var(--disp);font-weight:400;font-size:14px;letter-spacing:1px;margin:0 0 10px;color:var(--duck)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 8px}
+.kpi b{display:block;font:700 19px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.kpi b.pos{color:var(--up)}.kpi b.neg{color:var(--down)}
+.kpi span{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:1px}
+.price{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--mute)}
+.price input{width:84px;background:var(--ink);color:var(--cream);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:500 14px var(--mono)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font:700 10px var(--mono);letter-spacing:1px;color:var(--mute);text-transform:uppercase;text-align:right;padding:4px 0 6px}
+th:first-child{text-align:left}
+td{padding:6px 0 6px 6px;white-space:nowrap;font-size:12px;border-top:1px solid var(--line);text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+td:first-child{text-align:left;font-family:var(--body);font-weight:600;white-space:normal;padding-left:0;font-size:13px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--dc)}
+.lucky{color:var(--dr)}.unlucky{color:var(--sir)}
+.note{font-size:12px;color:var(--mute);margin:10px 0 0}
+.note a{color:var(--r)}
+.hits{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;max-height:240px;overflow:auto}
+.hits .mini{width:auto}
+.empty{color:var(--mute);font-size:13px;grid-column:1/-1}
+
+/* binder */
+.binder-bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:18px 0 12px}
+.binder-bar .prog{flex:1;min-width:200px;height:10px;border-radius:99px;background:var(--ink3);overflow:hidden}
+.binder-bar .prog i{display:block;height:100%;background:linear-gradient(90deg,var(--duck),var(--beak))}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button{font:600 12px var(--body);color:var(--mute);background:var(--ink2);border:1px solid var(--line);border-radius:99px;padding:6px 11px;cursor:pointer}
+.filters button[aria-pressed="true"]{color:var(--ink);background:var(--cream)}
+.binder{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}
+.thumb{position:relative;aspect-ratio:63/88;border-radius:6px;overflow:hidden;background:var(--ink3);border:2px solid transparent}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.miss img,.thumb.miss .cc-card{filter:grayscale(1) brightness(.5);opacity:.7}
+.thumb .no{position:absolute;left:5px;bottom:5px;font:700 10px var(--mono);background:rgba(11,16,48,.85);padding:2px 5px;border-radius:4px}
+.thumb .px{position:absolute;right:5px;bottom:5px;font:700 10px var(--mono);background:rgba(11,16,48,.85);color:var(--duck);padding:2px 5px;border-radius:4px}
+a.thumb{display:block;color:inherit;text-decoration:none}
+a.thumb:hover{transform:translateY(-2px)}
+.thumb .qty{position:absolute;right:5px;top:5px;font:700 11px var(--mono);background:var(--duck);color:var(--ink);padding:1px 6px;border-radius:99px}
+.thumb.have{border-color:var(--hc,transparent)}
+
+.bulk{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;width:100%;max-width:640px}
+.bulk .mini{width:auto}
+.bulk-sum{margin-top:14px;text-align:center;font-size:14px;color:var(--mute)}
+.bulk-sum b{color:var(--cream)}
+footer{margin-top:26px;font-size:12px;color:var(--mute);max-width:760px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <img src="img/duck.png" alt="WD Card Shop duck logo">
+    <div class="hdr-txt">
+      <h1>30th Celebration <span>Rip Sim</span></h1>
+      <p>Rip virtual packs of the Pokémon TCG 30th Celebration set at real pull rates and see what your pulls are worth. A WD Card Shop fan project.</p>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-rip" aria-selected="true">Rip</button>
+      <button role="tab" id="tab-binder" aria-selected="false">Binder</button>
+    </div>
+  </header>
+
+  <section id="view-rip" class="grid">
+    <div>
+      <div class="stage" id="stage">
+        <div class="rays" id="rays"></div>
+        <div class="flash" id="flash"></div>
+        <div class="banner" id="banner"></div>
+        <div id="stageInner"></div>
+      </div>
+      <div class="pulled" id="pulled" aria-label="Cards from this pack"></div>
+      <div class="controls">
+        <button class="btn" id="btnNext">Rip a pack</button>
+        <button class="btn ghost" id="btnAll">Reveal all</button>
+        <button class="btn ghost" id="btn10">Rip 10 fast</button>
+        <button class="btn ghost" id="btn36">Rip a booster box (36)</button>
+      </div>
+    </div>
+
+    <aside>
+      <div class="panel">
+        <h2>YOUR SESSION</h2>
+        <div class="kpis">
+          <div class="kpi"><b id="kPacks">0</b><span>Packs</span></div>
+          <div class="kpi"><b id="kSpent">$0</b><span>Spent</span></div>
+          <div class="kpi"><b id="kNet">$0</b><span>Profit / loss</span></div>
+          <div class="kpi"><b id="kValue">$0</b><span>Pulled value</span></div>
+          <div class="kpi"><b id="kBest">–</b><span>Best card</span></div>
+          <div class="kpi"><b id="kDex">0</b><span id="kDexL">Collected</span></div>
+        </div>
+        <label class="price" for="price">Price per pack $<input id="price" type="number" min="0" step="0.25" value="17.61"></label>
+        <p class="note" id="priceNote"></p>
+      </div>
+      <div class="panel">
+        <h2>PULL RATES</h2>
+        <table>
+          <thead><tr><th>Rarity</th><th>Odds</th><th>Yours</th><th>Pulled</th></tr></thead>
+          <tbody id="oddsBody"></tbody>
+        </table>
+        <p class="note">Odds per pack from community open data (<a href="https://www.wargamer.com/pokemon-trading-card-game/30th-celebration-pull-rates" target="_blank" rel="noopener">4,063 packs</a>, <a href="https://tcgtalk.com/guides/30th-anniversary-pull-rates" target="_blank" rel="noopener">652 packs</a>). RGB Mew rate is an estimate from very few pulls.</p>
+      </div>
+      <div class="panel">
+        <h2>HITS</h2>
+        <div class="hits" id="hits"><span class="empty">Your ex, IR, Classic, SIR, FUR and RGB pulls land here.</span></div>
+        <button class="btn ghost" id="btnReset" style="margin-top:12px;font-size:12px;padding:7px 12px">Reset stats</button>
+      </div>
+    </aside>
+  </section>
+
+  <section id="view-binder" hidden>
+    <div class="binder-bar">
+      <b id="bCount" style="font-family:var(--mono)">0 / 188</b>
+      <div class="prog"><i id="bProg" style="width:0"></i></div>
+      <div class="filters" id="filters"></div>
+    </div>
+    <div class="binder" id="binder"></div>
+  </section>
+
+  <footer>Unofficial fan-made simulator for fun. Not affiliated with or endorsed by Nintendo, The Pokémon Company or Creatures. Card images via TCGdex and TCGplayer. Prices are TCGplayer market prices (via tcgcsv.com) and change daily. Pokémon © Nintendo / Creatures / GAME FREAK.</footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+(() => {
+const R = {
+  C:  {name:"Common",               short:"C",   color:"var(--c)"},
+  R:  {name:"Rare",                 short:"R",   color:"var(--r)"},
+  PK: {name:"Pikachu Rare",         short:"PK",  color:"var(--pk)", odds:1},
+  DR: {name:"Double Rare",          short:"ex",  color:"var(--dr)", odds:1/4,   hit:1},
+  IR: {name:"Illustration Rare",    short:"IR",  color:"var(--ir)", odds:1/5,   hit:1},
+  CC: {name:"Classic Collection",   short:"CC",  color:"var(--cc)", odds:1/10,  hit:1},
+  SIR:{name:"Special Illustration", short:"SIR", color:"var(--sir)",odds:1/20,  hit:2},
+  FUR:{name:"Futuristic Rare",      short:"FUR", color:"var(--fur)",odds:1/100, hit:3},
+  RGB:{name:"RGB Rare",             short:"RGB", color:"var(--rgb)",odds:1/3200,hit:4},
+};
+const ORDER = ["PK","DR","IR","CC","SIR","FUR","RGB"];
+const cards = window.CARDS.map(c => ({...c, key:(c.r==="CC"||c.r==="RGB"?c.r:"")+c.n}));
+const PRICES = window.PRICES || {};
+const money = v => v == null ? "—" : "$" + (v >= 1000 ? Math.round(v).toLocaleString() : v.toFixed(2));
+const val = c => c.p || 0;
+const num = c => c.r==="CC" ? c.o : c.r==="RGB" ? c.n+"/RGB" : "#"+c.n+(+c.n>128?"/128":"");
+const byR = {}; cards.forEach(c => (byR[c.r] ||= []).push(c));
+const pick = r => byR[r][Math.floor(Math.random()*byR[r].length)];
+
+// Pack structure (English, 5 cards): 2 commons, a common/IR/Classic slot, a rare slot, a Pikachu slot.
+function makePack(){
+  const c1 = pick("C"); let c2; do c2 = pick("C"); while (c2 === c1);
+  let x = Math.random(), s3 = x < .10 ? pick("CC") : x < .30 ? pick("IR") : pick("C");
+  x = Math.random();
+  const s4 = x < 1/3200 ? pick("RGB") : x < .01 ? pick("FUR") : x < .06 ? pick("SIR") : x < .31 ? pick("DR") : pick("R");
+  return [c1, c2, pick("PK"), s3, s4];   // reveal order: best slots last
+}
+
+// ---------- state ----------
+const blank = () => ({packs:0, counts:{}, have:{}, hits:[]});
+let S = blank();
+try { S = Object.assign(blank(), JSON.parse(localStorage.getItem("rip30") || "null") || {}); } catch {}
+const save = () => { try { localStorage.setItem("rip30", JSON.stringify(S)); } catch {} };
+let price = PRICES.pack || 17.61;
+try { const p = parseFloat(localStorage.getItem("rip30pack")); if (!isNaN(p)) price = p; } catch {}
+$("price").value = price.toFixed(2);
+
+function record(pack){
+  S.packs++;
+  const seen = new Set();
+  pack.forEach(c => {
+    S.have[c.key] = (S.have[c.key]||0) + 1;
+    if (R[c.r].odds !== undefined && !seen.has(c.r)) { S.counts[c.r] = (S.counts[c.r]||0) + 1; seen.add(c.r); }
+    if (R[c.r].hit) S.hits.unshift(c.key);
+  });
+  S.hits = S.hits.slice(0, 300);
+  save();
+}
+
+// ---------- rendering helpers ----------
+function $(id){ return document.getElementById(id); }
+const find = key => cards.find(c => c.key === key);
+function artHTML(c, big){
+  if (c.img) return `<img src="${c.img}" alt="${c.name}" loading="${big ? "eager" : "lazy"}">`;
+  return `<div class="cc-card"><div class="cc-in"><div class="t">CLASSIC</div><div class="n">${c.name}</div><div class="s">${c.n}/030</div></div></div>`;
+}
+function miniHTML(c){
+  const h = R[c.r].hit ? ` hit" style="--hc:${R[c.r].color}` : "";
+  return `<div class="mini${h}" title="${c.name} · ${R[c.r].name} · ${money(c.p)}">${artHTML(c)}<span class="tag${val(c)>=5?" big":""}">${money(c.p)}</span></div>`;
+}
+
+function renderStats(){
+  $("kPacks").textContent = S.packs;
+  $("kSpent").textContent = "$" + Math.round(S.packs * price).toLocaleString();
+  const dex = Object.keys(S.have).length;
+  let value = 0, best = null;
+  for (const [k,q] of Object.entries(S.have)){ const c = find(k); if (!c) continue; value += val(c)*q; if (!best || val(c) > val(best)) best = c; }
+  const net = value - S.packs*price;
+  $("kValue").textContent = money(value);
+  $("kNet").textContent = (net < 0 ? "−" : "+") + money(Math.abs(net));
+  $("kNet").className = S.packs ? (net >= 0 ? "pos" : "neg") : "";
+  $("kBest").textContent = best ? money(best.p) : "–";
+  $("kBest").title = best ? best.name : "";
+  $("kDex").textContent = dex + "/" + cards.length;
+  $("oddsBody").innerHTML = ORDER.map(r => {
+    const o = R[r].odds, n = S.counts[r]||0;
+    const yours = !S.packs ? "–" : n ? (r==="PK" ? "1 in 1" : "1 in " + (S.packs/n).toFixed(S.packs/n < 10 ? 1 : 0)) : "—";
+    const exp = S.packs * o, cls = S.packs >= 10 && r!=="PK" ? (n > exp*1.25 ? "lucky" : n < exp*.75 ? "unlucky" : "") : "";
+    return `<tr><td><span class="dot" style="--dc:${R[r].color}"></span>${R[r].name}</td><td>1 in ${Math.round(1/o)}</td><td class="${cls}">${yours}</td><td>${n}</td></tr>`;
+  }).join("");
+  $("hits").innerHTML = S.hits.length ? S.hits.map(k => miniHTML(find(k))).join("") : `<span class="empty">Your ex, IR, Classic, SIR, FUR and RGB pulls land here.</span>`;
+  $("bCount").textContent = `${dex} / ${cards.length}`;
+  $("bProg").style.width = (dex / cards.length * 100) + "%";
+}
+
+// ---------- rip flow ----------
+let mode = "sealed", pack = null, idx = 0, busy = false;
+const inner = $("stageInner");
+
+function showSealed(){
+  mode = "sealed"; pack = makePack(); idx = 0;
+  pack.forEach(c => { if (c.img) new Image().src = c.img; });  // preload
+  $("rays").classList.remove("on");
+  $("pulled").innerHTML = "";
+  inner.innerHTML = `
+    <button class="pack" id="pack" aria-label="Tear open the pack">
+      <div class="lid"></div>
+      <div class="body"><div class="shine"></div>
+        <div class="tiny">POKÉMON TCG</div>
+        <div class="big30">30</div>
+        <div class="lbl">CELEBRATION</div>
+        <img class="duck" src="img/duck.png" alt="">
+        <div class="tiny">5 CARDS · ALL HOLO</div>
+      </div>
+    </button>
+    <div class="hint">Tap the pack to tear it</div>`;
+  $("pack").onclick = tear;
+  $("btnNext").textContent = "Tear it open";
+  $("btnAll").disabled = true;
+}
+
+function tear(){
+  if (mode !== "sealed" || busy) return;
+  busy = true; const p = $("pack");
+  p.classList.add("charge");
+  setTimeout(() => { p.classList.add("torn"); }, 650);
+  setTimeout(() => {
+    record(pack); renderStats();
+    mode = "open"; busy = false;
+    inner.innerHTML = `<button class="stack" id="stack" aria-label="Flip the next card">${
+      pack.map((c,i) => `<div class="card" id="card${i}" style="z-index:${10-i}"><div class="back"></div><div class="face">${artHTML(c,true)}</div></div>`).join("")
+    }</button><div class="meta" id="meta"><div class="counter">5 cards · tap to flip</div></div>`;
+    $("stack").onclick = next;
+    $("btnNext").textContent = "Flip next card";
+    $("btnAll").disabled = false;
+  }, 1200);
+}
+
+function celebrate(c){
+  const t = R[c.r];
+  if (!t.hit) return;
+  const rays = $("rays"); rays.style.setProperty("--rc", t.color); rays.classList.add("on");
+  if (t.hit >= 2){
+    const f = $("flash"); f.style.setProperty("--fc", t.color); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+    const st = $("stage"); st.classList.remove("shake"); void st.offsetWidth; st.classList.add("shake");
+  }
+  const b = $("banner"); b.textContent = {DR:"DOUBLE RARE!",IR:"ILLUSTRATION RARE!",CC:"CLASSIC!",SIR:"SIR!!",FUR:"FUTURISTIC!!!",RGB:"RGB MEW?!?!"}[c.r];
+  b.style.setProperty("--bc", t.color); b.classList.remove("go"); void b.offsetWidth; b.classList.add("go");
+}
+
+function next(){
+  if (mode === "sealed") return tear();
+  if (mode === "done") return showSealed();
+  if (busy) return;
+  // current face-up card slides into the pulled row
+  if (idx > 0){
+    const prev = $("card"+(idx-1)); prev.classList.add("gone");
+    $("pulled").insertAdjacentHTML("beforeend", miniHTML(pack[idx-1]));
+  }
+  if (idx === pack.length){ finish(); return; }
+  const c = pack[idx], el = $("card"+idx), t = R[c.r];
+  const isLast = idx === pack.length - 1, premium = t.hit >= 2;
+  $("rays").classList.remove("on");
+  busy = true;
+  const delay = premium ? 900 : 0;
+  if (premium){ el.style.transform = "scale(1.04)"; el.animate([{transform:"rotate(-2deg)"},{transform:"rotate(2deg)"}],{duration:90,iterations:10}); }
+  setTimeout(() => {
+    el.style.transform = "";
+    el.classList.add("up");
+    if (t.hit){ el.classList.add("hit"); el.style.setProperty("--hc", t.color); }
+    if (t.hit >= 2 || c.r === "CC") el.classList.add("holo");
+    celebrate(c);
+    $("meta").innerHTML = `<div class="nm">${c.name}</div><div class="rt" style="color:${t.color}">${t.name} · ${num(c)}</div><div class="px">${c.u ? `<a href="${c.u}" target="_blank" rel="noopener">${money(c.p)}</a>` : money(c.p)}${c.p==null?" · no sales yet":""}</div><div class="counter">${idx+1} / 5</div>`;
+    idx++; busy = false;
+    $("btnNext").textContent = isLast ? "Done — see pack" : "Flip next card";
+  }, delay);
+}
+
+function finish(){
+  mode = "done"; $("rays").classList.remove("on");
+  const best = pack.slice().sort((a,b) => val(b) - val(a))[0];
+  inner.innerHTML = `<div class="bulk">${pack.map(miniHTML).join("")}</div>
+    <div class="bulk-sum">Pack value <b>${money(pack.reduce((a,c) => a+val(c), 0))}</b> vs <b>${money(price)}</b> paid · Best pull: <b>${best.name}</b> <span style="color:${R[best.r].color}">(${R[best.r].name})</span></div>`;
+  $("pulled").innerHTML = "";
+  $("btnNext").textContent = "Rip another";
+  $("btnAll").disabled = true;
+}
+
+function revealAll(){
+  if (mode !== "open" || busy) return;
+  finish();
+  const top = pack.map(c => R[c.r].hit || 0).reduce((a,b) => Math.max(a,b), 0);
+  if (top) celebrate(pack.find(c => (R[c.r].hit||0) === top));
+}
+
+function bulk(n){
+  if (busy) return;
+  if (mode === "sealed") { /* discard the unopened preview pack */ }
+  const hits = []; let total = 0;
+  for (let i = 0; i < n; i++){ const p = makePack(); record(p); p.forEach(c => { total += val(c); R[c.r].hit && hits.push(c); }); }
+  hits.sort((a,b) => R[b.r].hit - R[a.r].hit || ORDER.indexOf(b.r) - ORDER.indexOf(a.r));
+  mode = "done"; renderStats();
+  $("pulled").innerHTML = "";
+  const tally = ORDER.filter(r => r!=="PK").map(r => [r, hits.filter(c => c.r===r).length]).filter(x => x[1]);
+  inner.innerHTML = `<div class="bulk">${hits.length ? hits.map(miniHTML).join("") : ""}</div>
+    <div class="bulk-sum"><b>${n} packs</b> · paid <b>${money(n*price)}</b> · pulled <b style="color:${total>=n*price?"var(--up)":"var(--down)"}">${money(total)}</b><br>${hits.length ? tally.map(([r,k]) => `<span style="color:${R[r].color}">${k} ${R[r].short}</span>`).join(" · ") : "no hits beyond the Pikachu. Ouch."}</div>`;
+  if (hits.length) celebrate(hits[0]);
+  $("btnNext").textContent = "Rip another";
+  $("btnAll").disabled = true;
+}
+
+// ---------- binder ----------
+let filter = "all";
+const FILTERS = [["all","All"],["C","Common"],["R","Rare"],["PK","Pikachu"],["DR","ex"],["IR","IR"],["CC","Classic"],["SIR","SIR"],["FUR","FUR"],["RGB","RGB"]];
+function renderBinder(){
+  $("filters").innerHTML = FILTERS.map(([k,l]) => `<button data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join("");
+  $("binder").innerHTML = cards.filter(c => filter==="all" || c.r===filter).map(c => {
+    const q = S.have[c.key]||0;
+    return `<a class="thumb ${q?"have":"miss"}" href="${c.u||"#"}" target="_blank" rel="noopener" style="--hc:${R[c.r].color}" title="${c.name} · ${R[c.r].name} · view on TCGplayer">${artHTML(c)}<span class="no">${num(c)}</span><span class="px">${money(c.p)}</span>${q>1?`<span class="qty">×${q}</span>`:""}</a>`;
+  }).join("");
+}
+$("filters").onclick = e => { const f = e.target.dataset.f; if (f){ filter = f; renderBinder(); } };
+
+function setTab(t){
+  $("tab-rip").setAttribute("aria-selected", t==="rip"); $("tab-binder").setAttribute("aria-selected", t==="binder");
+  $("view-rip").hidden = t!=="rip"; $("view-binder").hidden = t!=="binder";
+  if (t==="binder") renderBinder();
+}
+$("tab-rip").onclick = () => setTab("rip");
+$("tab-binder").onclick = () => setTab("binder");
+
+$("btnNext").onclick = next;
+$("btnAll").onclick = revealAll;
+$("btn10").onclick = () => bulk(10);
+$("btn36").onclick = () => bulk(36);
+$("price").oninput = e => { price = parseFloat(e.target.value) || 0; try { localStorage.setItem("rip30pack", price); } catch {} renderStats(); };
+let armed = false;
+$("btnReset").onclick = e => {
+  if (!armed){ armed = true; e.target.textContent = "Tap again to erase everything"; setTimeout(() => { armed = false; e.target.textContent = "Reset stats"; }, 3000); return; }
+  S = blank(); save(); armed = false; e.target.textContent = "Reset stats"; renderStats(); showSealed();
+};
+document.addEventListener("keydown", e => { if (e.code === "Space" && document.activeElement.tagName !== "INPUT" && !$("view-rip").hidden){ e.preventDefault(); next(); } });
+
+$("priceNote").textContent = `Card values: TCGplayer market price as of ${PRICES.asOf || "—"}. Loose pack market: ${money(PRICES.pack)}.`;
+renderStats();
+showSealed();
+})();
+</script>
+
+</body>
+</html>
